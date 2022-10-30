@@ -1,0 +1,18 @@
+[package]
+license = "MIT"
+edition = "2021"
+version = "0.1.0"
+name = "auto-commit"
+readme = "README.md"
+categories = ["command-line-utilities"]
+homepage = "https://github.com/m1guelpf/auto-commit"
+repository = "https://github.com/m1guelpf/auto-commit"
+description = "Automagically generate commit messages."
+authors = ["Miguel Piedrafita <soy@miguelpiedrafita.com>"]
+
+[dependencies]
+env_logger = "0.9.1"
+clap-verbosity-flag = "2.0.0"
+tokio = { version = "0.2", features = ["full"] }
+clap = { version = "4.0.18", features = ["derive"] }
+openai-api = { git = "https://github.com/deontologician/openai-api-rust", branch = "main" }
