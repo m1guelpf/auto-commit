@@ -4,6 +4,9 @@
 version=$(git describe --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/')
 version2=$(git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g')
 
+echo "Bumping Cargo version to $version"
+echo "Bumping PKGBUILD version to $version2"
+
 # Update the version in the PKGBUILD file.
 sed -i "s/pkgver=/pkgver=$version2/" PKGBUILD
 
