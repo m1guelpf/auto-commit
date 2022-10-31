@@ -1,11 +1,9 @@
-![auto-commit Banner](https://user-images.githubusercontent.com/23558090/198913031-a4444a04-3151-42e9-9db6-7605f14be955.jpg)
-
-# Automatically-generated commit messages
+![banner](https://user-images.githubusercontent.com/23558090/198913411-730bd7ff-3d9b-4a5e-831c-55691f97e11a.jpg)
 
 
-> Legible commit messages without the bother!
+# Automagically-generated commit messages
 
-A CLI tool that generates commit messages from your staged changes, using [OpenAI's Codex](https://openai.com/blog/openai-codex/).
+A CLI tool that generates commit messages from your staged changes, built in Rust and using [OpenAI's Codex](https://openai.com/blog/openai-codex/).
 
 ## Installation
 
@@ -51,11 +49,7 @@ In order for `auto-commit` to work you need to get an [OPENAI API Key](https://b
 
 ## Develop
 
-To build this package, make sure you have the latest version of rust installed (using for ex [rustup](https://rustup.rs/)) and then simply run the following command.
-
-```sh
-cargo build
-```
+Make sure you have the latest version of rust installed (use [rustup](https://rustup.rs/)). Then, you can build the project with by running `cargo build`, and run it with `cargo run`.
 
 ## License
-This project is open-sourced software licensed under the MIT license. See [the License file](https://github.com/m1guelpf/auto-commit/blob/main/LICENSE) for more information.
+This project is open-sourced under the MIT license. See [the License file](LICENSE) for more information.
