@@ -1,5 +1,6 @@
 use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
+use question::{Answer, Question};
 use std::{
     io::Write,
     process::{Command, Stdio},
@@ -45,10 +46,27 @@ async fn main() -> Result<(), ()> {
     });
 
     // Using git2 check if the repository exists
-    let repository = git2::Repository::open_from_env().map_err(|_| {
+    let _repository = git2::Repository::open_from_env().map_err(|_| {
             eprintln!("It looks like you are not in a git repository.\nPlease run this command from the root of a git repository, or initialize one using `git init`.");
             std::process::exit(1);
         }).unwrap();
+
+    let git_staged_cmd = Command::new("git")
+        .arg("diff")
+        .arg("--staged")
+        .output()
+        .expect("Couldn't find diff.")
+        .stdout;
+
+    let git_staged_cmd_output = str::from_utf8(&git_staged_cmd).unwrap();
+
+    if git_staged_cmd_output.len() == 0 {
+        eprintln!(
+            "There are no staged files to commit.\nTry running `git add` to stage some files."
+        );
+        std::process::exit(1);
+    }
+
     let client = openai_api::Client::new(&api_token);
 
     let output = Command::new("git")
@@ -107,15 +125,30 @@ async fn main() -> Result<(), ()> {
         .await
         .expect("Couldn't complete prompt.");
 
-    sp.stop();
-
-    println!("Done!");
+    sp.stop_with_message("Finished Analyzing!".into());
 
     let commit_msg = completion.choices[0].text.to_owned();
 
     if cli.dry_run {
         println!("{}", commit_msg);
         return Ok(());
+    } else {
+        println!(
+            "Proposed Commit:\n------------------------------\n{}\n------------------------------",
+            commit_msg
+        );
+        let answer = Question::new("Do you want to continue? (Y/n)")
+            .yes_no()
+            .until_acceptable()
+            .default(Answer::YES)
+            .ask()
+            .expect("Couldn't ask question.");
+
+        if answer == Answer::NO {
+            eprintln!("Commit aborted by user.");
+            std::process::exit(1);
+        }
+        println!("Committing Message...");
     }
 
     let mut ps_commit = Command::new("git")
