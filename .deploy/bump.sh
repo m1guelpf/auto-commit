@@ -2,7 +2,7 @@
 
 # Bump the version number in the package.json file
 version=$(git describe --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/')
-version2=$(git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g')
+version2=$(git describe --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g')
 
 echo "Bumping Cargo version to $version"
 echo "Bumping PKGBUILD version to $version2"
