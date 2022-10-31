@@ -127,6 +127,11 @@ jobs:
           overwrite: true
           file_glob: true
 
+  aur_release:
+    name: Bump AUR
+    runs-on: ubuntu-latest
+    steps:
+    
       - name: Checkout code
         uses: actions/checkout@v2
 
