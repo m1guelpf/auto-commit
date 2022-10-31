@@ -39,11 +39,6 @@ async fn main() -> Result<(), ()> {
         .filter_level(cli.verbose.log_level_filter())
         .init();
 
-    println!(
-        "Auto-commit by Miguel Piedrafita v{}\n---",
-        env!("CARGO_PKG_VERSION")
-    );
-
     let api_token = option_env!("OPENAI_API_KEY").unwrap_or_else(|| {
         eprintln!("Please set the OPENAI_API_KEY environment variable.");
         std::process::exit(1);
