@@ -17,35 +17,30 @@ You may need to close and reopen your terminal after installation. Alternatively
 
 ## Usage
 
-To automagically generate commit messages, simply add your files using for example
+`auto-commit` uses [OpenAI's Codex](https://openai.com/blog/openai-codex/), which is currently in private beta. To use it, you'll first need to to [request access to Codex](http://beta.openai.com/codex-waitlist). Once you get access, grab an API key from [your dashboard](https://beta.openai.com/), and save it to `OPENAI_API_KEY` as follows (you can also save it in your bash/zsh profile for presistance between sessions).
 
-```sh
-git add .
+```bash
+export OPENAI_API_KEY='sk-XXXXXXXX'
 ```
 
-And then run
+Once you have configured your environment, stage some changes by running, for example, `git add .`, and then run `auto-commit`.
+
+Of course, `auto-commit` also includes some options, for editing the message before commiting, or just printing the message to the terminal.
 
 ```sh
-auto-commit
+$ auto-commit --help
+Automagically generate commit messages.
+
+Usage: auto-commit [OPTIONS]
+
+Options:
+  -v, --verbose...  More output per occurrence
+  -q, --quiet...    Less output per occurrence
+      --dry-run     Output the generated message, but don't create a commit.
+  -r, --review      Edit the generated commit message before committing.
+  -h, --help        Print help information
+  -V, --version     Print version information
 ```
-
-If you would rather edit the commit message you can run
-
-```sh
-auto-commit -r
-```
-
-And if you only want to see the result and not commit it immediately you can dry-run using
-
-```sh
-auto-commit --dry-run
-```
-
-### API Keys (Requires [Open AI](https://beta.openai.com/))
-
-In order for `auto-commit` to work you need to get an [OPENAI API Key](https://beta.openai.com/), and have [access to Codex](http://beta.openai.com/codex-waitlist). Once you have those make sure to have the environment variable set as follows.
-
-`OPENAI_API_KEY='sk-XXXXXXXX'`
 
 ## Develop
 
