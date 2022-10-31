@@ -1,7 +1,7 @@
 [package]
 license = "MIT"
 edition = "2021"
-version = "0.1.3.r0.g88fc803"
+version = "0.1.3.r1.g053f12c"
 name = "auto-commit"
 readme = "README.md"
 categories = ["command-line-utilities"]
