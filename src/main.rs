@@ -7,6 +7,7 @@ use std::{
 };
 
 #[derive(Parser)]
+#[command(version)]
 #[command(name = "Auto Commit")]
 #[command(author = "Miguel Piedrafita <soy@miguelpiedrafita.com>")]
 #[command(about = "Automagically generate commit messages.", long_about = None)]

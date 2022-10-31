@@ -37,7 +37,7 @@ jobs:
       - name: "Move to outputs/ folder"
         run: |
           mkdir outputs
-          cp target/release/*.exe outputs/auto-commit-${{github.ref_name}}-win-x86_64.exe
+          cp target/release/*.exe outputs/auto-commit-win-x86_64.exe
 
       - name: Upload to temporary storage
         uses: actions/upload-artifact@master
@@ -69,8 +69,10 @@ jobs:
       - name: Build
         run: cargo build --release
 
+      # carry on with the build if this step fails
       - name: Install cargo-deb
         run: cargo install cargo-deb
+        continue-on-error: true
 
       - name: Create deb package
         run: cargo deb
@@ -79,8 +81,8 @@ jobs:
       - name: "Move to outputs/ folder"
         run: |
           mkdir outputs
-          cp target/release/auto-commit outputs/auto-commit-${{github.ref_name}}-linux-x86_64
-          cp target/debian/*.deb outputs/auto-commit-${{github.ref_name}}-linux-x86_64.deb
+          cp target/release/auto-commit outputs/auto-commit-linux-x86_64
+          cp target/debian/*.deb outputs/auto-commit-linux-x86_64.deb
 
       - name: Upload to temporary storage
         uses: actions/upload-artifact@master
@@ -122,8 +124,8 @@ jobs:
       - name: "Move to outputs/ folder"
         run: |
           mkdir outputs
-          cp target/aarch64-apple-darwin/release/auto-commit outputs/auto-commit-${{github.ref_name}}-darwin-aarch64
-          cp target/release/auto-commit outputs/auto-commit-${{github.ref_name}}-darwin-x86_64
+          cp target/aarch64-apple-darwin/release/auto-commit outputs/auto-commit-darwin-aarch64
+          cp target/release/auto-commit outputs/auto-commit-darwin-x86_64
 
       - name: Upload to temporary storage
         uses: actions/upload-artifact@master
