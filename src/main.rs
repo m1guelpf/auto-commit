@@ -44,11 +44,18 @@ async fn main() -> Result<(), ()> {
         std::process::exit(1);
     });
 
-    // Using git2 check if the repository exists
-    let repository = git2::Repository::open_from_env().map_err(|_| {
-            eprintln!("It looks like you are not in a git repository.\nPlease run this command from the root of a git repository, or initialize one using `git init`.");
-            std::process::exit(1);
-        }).unwrap();
+    let is_repo = Command::new("git")
+        .arg("rev-parse")
+        .arg("--is-inside-work-tree")
+        .output()
+        .expect("Failed to check if this is a git repository.")
+        .stdout;
+
+    if str::from_utf8(&is_repo).unwrap().trim() != "true" {
+        eprintln!("It looks like you are not in a git repository.\nPlease run this command from the root of a git repository, or initialize one using `git init`.");
+        std::process::exit(1);
+    }
+
     let client = openai_api::Client::new(&api_token);
 
     let output = Command::new("git")
