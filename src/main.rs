@@ -40,16 +40,10 @@ async fn main() -> Result<(), ()> {
         .filter_level(cli.verbose.log_level_filter())
         .init();
 
-    let api_token = option_env!("OPENAI_API_KEY").unwrap_or_else(|| {
+    let api_token = std::env::var("OPENAI_API_KEY").unwrap_or_else(|_| {
         eprintln!("Please set the OPENAI_API_KEY environment variable.");
         std::process::exit(1);
     });
-
-    // Using git2 check if the repository exists
-    let _repository = git2::Repository::open_from_env().map_err(|_| {
-            eprintln!("It looks like you are not in a git repository.\nPlease run this command from the root of a git repository, or initialize one using `git init`.");
-            std::process::exit(1);
-        }).unwrap();
 
     let git_staged_cmd = Command::new("git")
         .arg("diff")
@@ -64,6 +58,17 @@ async fn main() -> Result<(), ()> {
         eprintln!(
             "There are no staged files to commit.\nTry running `git add` to stage some files."
         );
+    }
+
+    let is_repo = Command::new("git")
+        .arg("rev-parse")
+        .arg("--is-inside-work-tree")
+        .output()
+        .expect("Failed to check if this is a git repository.")
+        .stdout;
+
+    if str::from_utf8(&is_repo).unwrap().trim() != "true" {
+        eprintln!("It looks like you are not in a git repository.\nPlease run this command from the root of a git repository, or initialize one using `git init`.");
         std::process::exit(1);
     }
 

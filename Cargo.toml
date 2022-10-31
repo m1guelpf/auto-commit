@@ -18,5 +18,4 @@ clap = { version = "4.0.18", features = ["derive"] }
 openai-api = { git = "https://github.com/deontologician/openai-api-rust", branch = "main" }
 spinners = "4.1.0"
 rand = "0.8.5"
-git2 = "0.15.0"
 question = "0.2.2"
