@@ -6,6 +6,9 @@ use std::{
     str,
 };
 
+use rand::seq::SliceRandom;
+use spinners::{Spinner, Spinners};
+
 #[derive(Parser)]
 #[command(version)]
 #[command(name = "Auto Commit")]
@@ -36,7 +39,16 @@ async fn main() -> Result<(), ()> {
         .filter_level(cli.verbose.log_level_filter())
         .init();
 
-    let api_token = std::env::var("OPENAI_API_KEY").expect("No API key specified.");
+    let api_token = option_env!("OPENAI_API_KEY").unwrap_or_else(|| {
+        eprintln!("Please set the OPENAI_API_KEY environment variable.");
+        std::process::exit(1);
+    });
+
+    // Using git2 check if the repository exists
+    let repository = git2::Repository::open_from_env().map_err(|_| {
+            eprintln!("It looks like you are not in a git repository.\nPlease run this command from the root of a git repository, or initialize one using `git init`.");
+            std::process::exit(1);
+        }).unwrap();
     let client = openai_api::Client::new(&api_token);
 
     let output = Command::new("git")
@@ -46,6 +58,8 @@ async fn main() -> Result<(), ()> {
         .expect("Couldn't find diff.")
         .stdout;
     let output = str::from_utf8(&output).unwrap();
+
+    println!("Loading Data...");
 
     let prompt_args = openai_api::api::CompletionArgs::builder()
         .prompt(format!(
@@ -57,10 +71,45 @@ async fn main() -> Result<(), ()> {
         .max_tokens(2000)
         .stop(vec!["EOF".into()]);
 
+    let vs = [
+        Spinners::Earth,
+        Spinners::Aesthetic,
+        Spinners::Hearts,
+        Spinners::BoxBounce,
+        Spinners::BoxBounce2,
+        Spinners::BouncingBar,
+        Spinners::Christmas,
+        Spinners::Clock,
+        Spinners::FingerDance,
+        Spinners::FistBump,
+        Spinners::Flip,
+        Spinners::Layer,
+        Spinners::Line,
+        Spinners::Material,
+        Spinners::Mindblown,
+        Spinners::Monkey,
+        Spinners::Noise,
+        Spinners::Point,
+        Spinners::Pong,
+        Spinners::Runner,
+        Spinners::SoccerHeader,
+        Spinners::Speaker,
+        Spinners::SquareCorners,
+        Spinners::Triangle,
+    ];
+
+    let spinner = vs.choose(&mut rand::thread_rng()).unwrap().clone();
+
+    let mut sp = Spinner::new(spinner, "Analyzing Codebase...".into());
+
     let completion = client
         .complete_prompt(prompt_args.build().unwrap())
         .await
         .expect("Couldn't complete prompt.");
+
+    sp.stop();
+
+    println!("Done!");
 
     let commit_msg = completion.choices[0].text.to_owned();
 

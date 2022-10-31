@@ -10,26 +10,46 @@ env:
 name: Create Release / Upload Assets
 
 jobs:
+  version_bump:
+    name: Bump cache version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Cache Version
+        run: .github/.deploy/bump.sh
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: aur-version
+          path: PKGBUILD
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: pkg-version
+          path: Cargo.toml
+
   windows:
     name: Build for Windows
     runs-on: windows-latest
+    needs: [version_bump]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up cargo cache
-        uses: actions/cache@v3
-        continue-on-error: false
+      - uses: actions/download-artifact@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
+          name: aur-version
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: pkg-version
+
+      - uses: Swatinem/rust-cache@v2
+        with:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Build
         run: cargo build --release
@@ -48,23 +68,23 @@ jobs:
   linux:
     name: Build for Linux
     runs-on: ubuntu-latest
+    needs: [version_bump]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up cargo cache
-        uses: actions/cache@v3
-        continue-on-error: false
+      - uses: actions/download-artifact@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
+          name: aur-version
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: pkg-version
+
+      - uses: Swatinem/rust-cache@v2
+        with:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Build
         run: cargo build --release
@@ -93,23 +113,23 @@ jobs:
   macos:
     name: Build for Mac
     runs-on: macos-11
+    needs: [version_bump]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up cargo cache
-        uses: actions/cache@v3
-        continue-on-error: false
+      - uses: actions/download-artifact@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
+          name: aur-version
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: pkg-version
+
+      - uses: Swatinem/rust-cache@v2
+        with:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Install ARM target
         run: rustup update && rustup target add aarch64-apple-darwin
@@ -153,3 +173,30 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
           file_glob: true
+
+  aur_release:
+    name: Bump AUR
+    runs-on: ubuntu-latest
+    needs: [version_bump]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: aur-version
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: pkg-version
+
+      - name: Publish AUR package
+        uses: KSXGitHub/github-actions-deploy-aur@v2.5.0
+        with:
+          pkgname: auto-commit
+          pkgbuild: ./PKGBUILD
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Update AUR package
+          ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
