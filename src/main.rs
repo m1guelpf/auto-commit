@@ -52,9 +52,9 @@ async fn main() -> Result<(), ()> {
         .expect("Couldn't find diff.")
         .stdout;
 
-    let git_staged_cmd_output = str::from_utf8(&git_staged_cmd).unwrap();
+    let git_staged_cmd = str::from_utf8(&git_staged_cmd).unwrap();
 
-    if git_staged_cmd_output.len() == 0 {
+    if git_staged_cmd.len() == 0 {
         eprintln!(
             "There are no staged files to commit.\nTry running `git add` to stage some files."
         );
