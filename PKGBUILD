@@ -6,9 +6,10 @@ arch=("x86_64" "arm")
 license=("mit")
 url='https://github.com/m1guelpf/auto-commit'
 makedepends=("git")
-source=("install.sh")
+source=("git+https://github.com/m1guelpf/auto-commit.git")
 sha512sums=("SKIP")
 
 package() {
-    bash "${srcdir}/install.sh"
+    cd auto-commit
+    bash "./install.sh"
 }
