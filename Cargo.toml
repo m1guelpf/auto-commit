@@ -16,3 +16,5 @@ clap-verbosity-flag = "2.0.0"
 tokio = { version = "0.2", features = ["full"] }
 clap = { version = "4.0.18", features = ["derive"] }
 openai-api = { git = "https://github.com/deontologician/openai-api-rust", branch = "main" }
+spinners = "4.1.0"
+rand = "0.8.5"
