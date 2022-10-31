@@ -91,43 +91,49 @@ async fn main() -> Result<(), ()> {
         .max_tokens(2000)
         .stop(vec!["EOF".into()]);
 
-    let vs = [
-        Spinners::Earth,
-        Spinners::Aesthetic,
-        Spinners::Hearts,
-        Spinners::BoxBounce,
-        Spinners::BoxBounce2,
-        Spinners::BouncingBar,
-        Spinners::Christmas,
-        Spinners::Clock,
-        Spinners::FingerDance,
-        Spinners::FistBump,
-        Spinners::Flip,
-        Spinners::Layer,
-        Spinners::Line,
-        Spinners::Material,
-        Spinners::Mindblown,
-        Spinners::Monkey,
-        Spinners::Noise,
-        Spinners::Point,
-        Spinners::Pong,
-        Spinners::Runner,
-        Spinners::SoccerHeader,
-        Spinners::Speaker,
-        Spinners::SquareCorners,
-        Spinners::Triangle,
-    ];
+    let sp: Option<Spinner> = if !cli.dry_run {
+        let vs = [
+            Spinners::Earth,
+            Spinners::Aesthetic,
+            Spinners::Hearts,
+            Spinners::BoxBounce,
+            Spinners::BoxBounce2,
+            Spinners::BouncingBar,
+            Spinners::Christmas,
+            Spinners::Clock,
+            Spinners::FingerDance,
+            Spinners::FistBump,
+            Spinners::Flip,
+            Spinners::Layer,
+            Spinners::Line,
+            Spinners::Material,
+            Spinners::Mindblown,
+            Spinners::Monkey,
+            Spinners::Noise,
+            Spinners::Point,
+            Spinners::Pong,
+            Spinners::Runner,
+            Spinners::SoccerHeader,
+            Spinners::Speaker,
+            Spinners::SquareCorners,
+            Spinners::Triangle,
+        ];
 
-    let spinner = vs.choose(&mut rand::thread_rng()).unwrap().clone();
+        let spinner = vs.choose(&mut rand::thread_rng()).unwrap().clone();
 
-    // let mut sp = Spinner::new(spinner, "Analyzing Codebase...".into());
+        Some(Spinner::new(spinner, "Analyzing Codebase...".into()))
+    } else {
+        None
+    };
 
     let completion = client
         .complete_prompt(prompt_args.build().unwrap())
         .await
         .expect("Couldn't complete prompt.");
 
-    // sp.stop_with_message("Finished Analyzing!".into());
+    if sp.is_some() {
+        sp.unwrap().stop_with_message("Finished Analyzing!".into());
+    }
 
     let commit_msg = completion.choices[0].text.to_owned();
 
