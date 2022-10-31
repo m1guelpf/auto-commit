@@ -127,6 +127,9 @@ jobs:
           overwrite: true
           file_glob: true
 
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Publish AUR package
         uses: KSXGitHub/github-actions-deploy-aur@v2.5.0
         with:
