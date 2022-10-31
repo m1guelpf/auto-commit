@@ -1,5 +1,6 @@
 use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
+use question::{Answer, Question};
 use std::{
     io::Write,
     process::{Command, Stdio},
@@ -39,10 +40,25 @@ async fn main() -> Result<(), ()> {
         .filter_level(cli.verbose.log_level_filter())
         .init();
 
-    let api_token = option_env!("OPENAI_API_KEY").unwrap_or_else(|| {
+    let api_token = std::env::var("OPENAI_API_KEY").unwrap_or_else(|_| {
         eprintln!("Please set the OPENAI_API_KEY environment variable.");
         std::process::exit(1);
     });
+
+    let git_staged_cmd = Command::new("git")
+        .arg("diff")
+        .arg("--staged")
+        .output()
+        .expect("Couldn't find diff.")
+        .stdout;
+
+    let git_staged_cmd = str::from_utf8(&git_staged_cmd).unwrap();
+
+    if git_staged_cmd.len() == 0 {
+        eprintln!(
+            "There are no staged files to commit.\nTry running `git add` to stage some files."
+        );
+    }
 
     let is_repo = Command::new("git")
         .arg("rev-parse")
@@ -66,7 +82,9 @@ async fn main() -> Result<(), ()> {
         .stdout;
     let output = str::from_utf8(&output).unwrap();
 
-    println!("Loading Data...");
+    if !cli.dry_run {
+        println!("Loading Data...");
+    }
 
     let prompt_args = openai_api::api::CompletionArgs::builder()
         .prompt(format!(
@@ -78,51 +96,72 @@ async fn main() -> Result<(), ()> {
         .max_tokens(2000)
         .stop(vec!["EOF".into()]);
 
-    let vs = [
-        Spinners::Earth,
-        Spinners::Aesthetic,
-        Spinners::Hearts,
-        Spinners::BoxBounce,
-        Spinners::BoxBounce2,
-        Spinners::BouncingBar,
-        Spinners::Christmas,
-        Spinners::Clock,
-        Spinners::FingerDance,
-        Spinners::FistBump,
-        Spinners::Flip,
-        Spinners::Layer,
-        Spinners::Line,
-        Spinners::Material,
-        Spinners::Mindblown,
-        Spinners::Monkey,
-        Spinners::Noise,
-        Spinners::Point,
-        Spinners::Pong,
-        Spinners::Runner,
-        Spinners::SoccerHeader,
-        Spinners::Speaker,
-        Spinners::SquareCorners,
-        Spinners::Triangle,
-    ];
+    let sp: Option<Spinner> = if !cli.dry_run {
+        let vs = [
+            Spinners::Earth,
+            Spinners::Aesthetic,
+            Spinners::Hearts,
+            Spinners::BoxBounce,
+            Spinners::BoxBounce2,
+            Spinners::BouncingBar,
+            Spinners::Christmas,
+            Spinners::Clock,
+            Spinners::FingerDance,
+            Spinners::FistBump,
+            Spinners::Flip,
+            Spinners::Layer,
+            Spinners::Line,
+            Spinners::Material,
+            Spinners::Mindblown,
+            Spinners::Monkey,
+            Spinners::Noise,
+            Spinners::Point,
+            Spinners::Pong,
+            Spinners::Runner,
+            Spinners::SoccerHeader,
+            Spinners::Speaker,
+            Spinners::SquareCorners,
+            Spinners::Triangle,
+        ];
 
-    let spinner = vs.choose(&mut rand::thread_rng()).unwrap().clone();
+        let spinner = vs.choose(&mut rand::thread_rng()).unwrap().clone();
 
-    let mut sp = Spinner::new(spinner, "Analyzing Codebase...".into());
+        Some(Spinner::new(spinner, "Analyzing Codebase...".into()))
+    } else {
+        None
+    };
 
     let completion = client
         .complete_prompt(prompt_args.build().unwrap())
         .await
         .expect("Couldn't complete prompt.");
 
-    sp.stop();
-
-    println!("Done!");
+    if sp.is_some() {
+        sp.unwrap().stop_with_message("Finished Analyzing!".into());
+    }
 
     let commit_msg = completion.choices[0].text.to_owned();
 
     if cli.dry_run {
         println!("{}", commit_msg);
         return Ok(());
+    } else {
+        println!(
+            "Proposed Commit:\n------------------------------\n{}\n------------------------------",
+            commit_msg
+        );
+        let answer = Question::new("Do you want to continue? (Y/n)")
+            .yes_no()
+            .until_acceptable()
+            .default(Answer::YES)
+            .ask()
+            .expect("Couldn't ask question.");
+
+        if answer == Answer::NO {
+            eprintln!("Commit aborted by user.");
+            std::process::exit(1);
+        }
+        println!("Committing Message...");
     }
 
     let mut ps_commit = Command::new("git")
