@@ -1,7 +1,7 @@
 [package]
 license = "MIT"
 edition = "2021"
-version = "0.1.4-pre8"
+version = "0.1.4"
 name = "auto-commit"
 readme = "README.md"
 categories = ["command-line-utilities"]
@@ -18,3 +18,4 @@ clap = { version = "4.0.18", features = ["derive"] }
 openai-api = { git = "https://github.com/deontologician/openai-api-rust", branch = "main" }
 spinners = "4.1.0"
 rand = "0.8.5"
+git2 = "0.15.0"
