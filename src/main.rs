@@ -77,7 +77,9 @@ async fn main() -> Result<(), ()> {
         .stdout;
     let output = str::from_utf8(&output).unwrap();
 
-    println!("Loading Data...");
+    if !cli.dry_run {
+        println!("Loading Data...");
+    }
 
     let prompt_args = openai_api::api::CompletionArgs::builder()
         .prompt(format!(
@@ -118,14 +120,14 @@ async fn main() -> Result<(), ()> {
 
     let spinner = vs.choose(&mut rand::thread_rng()).unwrap().clone();
 
-    let mut sp = Spinner::new(spinner, "Analyzing Codebase...".into());
+    // let mut sp = Spinner::new(spinner, "Analyzing Codebase...".into());
 
     let completion = client
         .complete_prompt(prompt_args.build().unwrap())
         .await
         .expect("Couldn't complete prompt.");
 
-    sp.stop_with_message("Finished Analyzing!".into());
+    // sp.stop_with_message("Finished Analyzing!".into());
 
     let commit_msg = completion.choices[0].text.to_owned();
 
