@@ -27,3 +27,6 @@ To build this package, make sure you have the latest version of rust installed (
 ```
 cargo build
 ```
+
+## License
+This project is open-sourced software licensed under the MIT license. See [the License file](https://github.com/m1guelpf/auto-commit/blob/main/LICENSE) for more information.
