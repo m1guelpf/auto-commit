@@ -19,6 +19,7 @@ jobs:
 
       - name: Cache Version
         run: .deploy/bump.sh
+
       - uses: actions/upload-artifact@v2
         with:
           name: aur-version
