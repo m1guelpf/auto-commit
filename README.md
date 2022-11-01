@@ -22,7 +22,7 @@ You may need to close and reopen your terminal after installation. Alternatively
 
 ## Usage
 
-`auto-commit` uses [OpenAI's Codex](https://openai.com/blog/openai-codex/), which is currently in private beta. To use it, you'll first need to to [request access to Codex](http://beta.openai.com/codex-waitlist). Once you get access, grab an API key from [your dashboard](https://beta.openai.com/), and save it to `OPENAI_API_KEY` as follows (you can also save it in your bash/zsh profile for presistance between sessions).
+`auto-commit` uses [OpenAI's Codex](https://openai.com/blog/openai-codex/), which is currently in private beta. To use it, you'll first need to to [request access to Codex](http://beta.openai.com/codex-waitlist). Once you get access, grab an API key from [your dashboard](https://beta.openai.com/), and save it to `OPENAI_API_KEY` as follows (you can also save it in your bash/zsh profile for persistance between sessions).
 
 ```bash
 export OPENAI_API_KEY='sk-XXXXXXXX'
