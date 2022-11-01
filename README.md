@@ -49,7 +49,7 @@ Options:
 
 ## Develop
 
-Make sure you have the latest version of rust installed (use [rustup](https://rustup.rs/)). Then, you can build the project with by running `cargo build`, and run it with `cargo run`.
+Make sure you have the latest version of rust installed (use [rustup](https://rustup.rs/)). Then, you can build the project by running `cargo build`, and run it with `cargo run`.
 
 ## License
 
