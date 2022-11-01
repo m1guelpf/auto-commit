@@ -47,9 +47,18 @@ jobs:
         with:
           name: pkg-version
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
         with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Build
         run: cargo build --release
@@ -82,14 +91,22 @@ jobs:
         with:
           name: pkg-version
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
         with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Build
         run: cargo build --release
 
-      # carry on with the build if this step fails
       - name: Install cargo-deb
         run: cargo install cargo-deb
         continue-on-error: true
@@ -97,7 +114,6 @@ jobs:
       - name: Create deb package
         run: cargo deb
 
-      # Name of binary needed
       - name: "Move to outputs/ folder"
         run: |
           mkdir outputs
@@ -127,9 +143,18 @@ jobs:
         with:
           name: pkg-version
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
         with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Install ARM target
         run: rustup update && rustup target add aarch64-apple-darwin
