@@ -24,8 +24,6 @@ You may need to close and reopen your terminal after installation. Alternatively
 
 `auto-commit` uses [OpenAI's Codex](https://openai.com/blog/openai-codex/), which is currently in private beta. To use it, you'll first need to to [request access to Codex](http://beta.openai.com/codex-waitlist). Once you get access, grab an API key from [your dashboard](https://beta.openai.com/), and save it to `OPENAI_API_KEY` as follows (you can also save it in your bash/zsh profile for presistance between sessions).
 
-> **Note** If you don't wanna wait to get access to Codex (or don't wanna use your API key), check the [Cloud](#cloud-service) section below.
-
 ```bash
 export OPENAI_API_KEY='sk-XXXXXXXX'
 ```
@@ -48,12 +46,6 @@ Options:
   -h, --help        Print help information
   -V, --version     Print version information
 ```
-
-### Cloud Service
-
-Since Codex isn't available to everyone yet, I'm considering setting up an API service that you can use instead (which the CLI would also support). If this is something you'd be interested in, you can [preorder it here](https://m1guelpf.me/auto-commit-cloud).
-
-> If enough people preorder the cloud service, I'll have it shipped by the end of the week. Otherwise, you'll get a full refund.
 
 ## Develop
 
