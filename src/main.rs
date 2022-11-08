@@ -1,5 +1,6 @@
 use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
+use log::{error, info};
 use question::{Answer, Question};
 use std::{
     io::Write,
@@ -31,6 +32,9 @@ struct Cli {
         help = "Edit the generated commit message before committing."
     )]
     review: bool,
+
+    #[arg(short, long, help = "Don't ask for confirmation before committing.")]
+    force: bool,
 }
 
 #[tokio::main]
@@ -41,7 +45,7 @@ async fn main() -> Result<(), ()> {
         .init();
 
     let api_token = std::env::var("OPENAI_API_KEY").unwrap_or_else(|_| {
-        eprintln!("Please set the OPENAI_API_KEY environment variable.");
+        error!("Please set the OPENAI_API_KEY environment variable.");
         std::process::exit(1);
     });
 
@@ -55,9 +59,7 @@ async fn main() -> Result<(), ()> {
     let git_staged_cmd = str::from_utf8(&git_staged_cmd).unwrap();
 
     if git_staged_cmd.len() == 0 {
-        eprintln!(
-            "There are no staged files to commit.\nTry running `git add` to stage some files."
-        );
+        error!("There are no staged files to commit.\nTry running `git add` to stage some files.");
     }
 
     let is_repo = Command::new("git")
@@ -68,7 +70,7 @@ async fn main() -> Result<(), ()> {
         .stdout;
 
     if str::from_utf8(&is_repo).unwrap().trim() != "true" {
-        eprintln!("It looks like you are not in a git repository.\nPlease run this command from the root of a git repository, or initialize one using `git init`.");
+        error!("It looks like you are not in a git repository.\nPlease run this command from the root of a git repository, or initialize one using `git init`.");
         std::process::exit(1);
     }
 
@@ -83,7 +85,7 @@ async fn main() -> Result<(), ()> {
     let output = str::from_utf8(&output).unwrap();
 
     if !cli.dry_run {
-        println!("Loading Data...");
+        info!("Loading Data...");
     }
 
     let prompt_args = openai_api::api::CompletionArgs::builder()
@@ -96,7 +98,7 @@ async fn main() -> Result<(), ()> {
         .max_tokens(2000)
         .stop(vec!["EOF".into()]);
 
-    let sp: Option<Spinner> = if !cli.dry_run {
+    let sp: Option<Spinner> = if !cli.dry_run && cli.verbose.is_silent() {
         let vs = [
             Spinners::Earth,
             Spinners::Aesthetic,
@@ -143,25 +145,28 @@ async fn main() -> Result<(), ()> {
     let commit_msg = completion.choices[0].text.to_owned();
 
     if cli.dry_run {
-        println!("{}", commit_msg);
+        info!("{}", commit_msg);
         return Ok(());
     } else {
-        println!(
+        info!(
             "Proposed Commit:\n------------------------------\n{}\n------------------------------",
             commit_msg
         );
-        let answer = Question::new("Do you want to continue? (Y/n)")
-            .yes_no()
-            .until_acceptable()
-            .default(Answer::YES)
-            .ask()
-            .expect("Couldn't ask question.");
 
-        if answer == Answer::NO {
-            eprintln!("Commit aborted by user.");
-            std::process::exit(1);
+        if !cli.force {
+            let answer = Question::new("Do you want to continue? (Y/n)")
+                .yes_no()
+                .until_acceptable()
+                .default(Answer::YES)
+                .ask()
+                .expect("Couldn't ask question.");
+
+            if answer == Answer::NO {
+                error!("Commit aborted by user.");
+                std::process::exit(1);
+            }
+            info!("Committing Message...");
         }
-        println!("Committing Message...");
     }
 
     let mut ps_commit = Command::new("git")
@@ -193,7 +198,7 @@ async fn main() -> Result<(), ()> {
             .expect("Failed to edit commit.");
     }
 
-    println!("{}", str::from_utf8(&commit_output.stdout).unwrap());
+    info!("{}", str::from_utf8(&commit_output.stdout).unwrap());
 
     Ok(())
 }
