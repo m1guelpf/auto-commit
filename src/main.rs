@@ -166,6 +166,7 @@ async fn main() -> Result<(), ()> {
 
     let mut ps_commit = Command::new("git")
         .arg("commit")
+        .args(if cli.review { vec!["-e"] } else { vec![] })
         .arg("-F")
         .arg("-")
         .stdin(Stdio::piped())
@@ -179,19 +180,9 @@ async fn main() -> Result<(), ()> {
             .expect("Failed to write to stdin");
     });
 
-    let mut commit_output = ps_commit
+    let commit_output = ps_commit
         .wait_with_output()
         .expect("There was an error when creating the commit.");
-
-    if cli.review {
-        commit_output = Command::new("git")
-            .arg("commit")
-            .arg("--amend")
-            .spawn()
-            .expect("Failed to open editor.")
-            .wait_with_output()
-            .expect("Failed to edit commit.");
-    }
 
     println!("{}", str::from_utf8(&commit_output.stdout).unwrap());
 
