@@ -11,6 +11,7 @@ description = "Automagically generate commit messages."
 authors = ["Miguel Piedrafita <soy@miguelpiedrafita.com>"]
 
 [dependencies]
+log = { version = "0.4.8", features = ["std"] }
 env_logger = "0.9.1"
 clap-verbosity-flag = "2.0.0"
 tokio = { version = "0.2", features = ["full"] }
