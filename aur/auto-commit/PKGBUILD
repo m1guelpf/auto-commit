@@ -1,0 +1,23 @@
+pkgname="auto-commit"
+pkgver=0.1.5
+pkgrel=1
+_pkg=${pkgname}-${pkgver}
+pkgdesc="A CLI tool built in Rust that uses OpenAI's Codex to generate commit messages from your staged changes."
+arch=("x86_64")
+license=("mit")
+url="https://github.com/m1guelpf/$pkgname"
+makedepends=("rust")
+provides=("auto-commit")
+conflicts=("auto-commit-git" "auto-commit-bin" "auto-commit-bin-git")
+source=("${url}/archive/refs/tags/v${pkgver}.tar.gz")
+sha512sums=("SKIP")
+
+build() {
+    cd "${srcdir}/${_pkg}"
+    cargo build --release
+}
+
+package() {
+    cd "${srcdir}/${_pkg}"
+    install -D ./target/release/${pkgname} ${pkgdir}/usr/bin/${pkgname}
+}
