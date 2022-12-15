@@ -183,6 +183,10 @@ async fn main() -> Result<(), ()> {
                             std::process::exit(1);
                         }
                         "edit" | "e" => {
+                            let editor = match std::env::var("EDITOR") {
+                                Ok(val) => val,
+                                Err(_) => "vi".to_string(),
+                            };
                             let mut commit_msg_file = File::create(".auto_commit_msg")
                                 .expect("Couldn't create temp file");
                             commit_msg_file
@@ -191,7 +195,7 @@ async fn main() -> Result<(), ()> {
 
                             Command::new("/usr/bin/sh")
                                 .arg("-c")
-                                .arg("vim .auto_commit_msg")
+                                .arg(format!("{} .auto_commit_msg", editor))
                                 .spawn()
                                 .expect("Error: Failed to run editor")
                                 .wait()
