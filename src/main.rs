@@ -156,61 +156,58 @@ async fn main() -> Result<(), ()> {
         );
 
         if !cli.force {
-            let answer = Question::new("Do you want to continue? (Y)es / (E)dit / (N)o")
-                .accept("Yes")
+            let answer = Question::new("Do you want to continue? [Y]es [e]dit [n]o")
                 .accept("yes")
-                .accept("Y")
                 .accept("y")
-                .accept("Edit")
                 .accept("edit")
-                .accept("E")
                 .accept("e")
-                .accept("No")
                 .accept("no")
-                .accept("N")
                 .accept("n")
                 .default(Answer::RESPONSE(String::from("yes")))
                 .until_acceptable()
                 .ask()
                 .expect("Couldn't ask question.");
 
-            match answer {
-                Answer::RESPONSE(input) => {
-                    let input_lower = input.to_lowercase();
-                    match input_lower.as_str() {
-                        "no" | "n" => {
+            if let Answer::RESPONSE(input) = answer {
+                let input_lower = input.to_lowercase();
+                match input_lower.as_str() {
+                    "no" | "n" => {
+                        error!("Commit aborted by user.");
+                        std::process::exit(1);
+                    }
+
+                    "edit" | "e" => {
+                        let editor = match std::env::var("EDITOR") {
+                            Ok(val) => val,
+                            Err(_) => "vi".to_string(),
+                        };
+                        let mut commit_msg_file =
+                            File::create(".auto_commit_msg").expect("Couldn't create temp file");
+                        commit_msg_file
+                            .write_all(commit_msg.as_bytes())
+                            .expect("Couldn't write commit msg into temp file");
+
+                        Command::new("/usr/bin/sh")
+                            .arg("-c")
+                            .arg(format!("{} .auto_commit_msg", editor))
+                            .spawn()
+                            .expect("Error: Failed to run editor")
+                            .wait()
+                            .expect("Error: Editor returned a non-zero status");
+
+                        commit_msg = fs::read_to_string(".auto_commit_msg")
+                            .expect("Cloudn't read commit message from file");
+                        fs::remove_file(".auto_commit_msg").expect("Failed to delete temp file");
+
+                        if commit_msg.len() == 0 {
                             error!("Commit aborted by user.");
                             std::process::exit(1);
                         }
-                        "edit" | "e" => {
-                            let editor = match std::env::var("EDITOR") {
-                                Ok(val) => val,
-                                Err(_) => "vi".to_string(),
-                            };
-                            let mut commit_msg_file = File::create(".auto_commit_msg")
-                                .expect("Couldn't create temp file");
-                            commit_msg_file
-                                .write_all(commit_msg.as_bytes())
-                                .expect("Couldn't write commit msg into temp file");
 
-                            Command::new("/usr/bin/sh")
-                                .arg("-c")
-                                .arg(format!("{} .auto_commit_msg", editor))
-                                .spawn()
-                                .expect("Error: Failed to run editor")
-                                .wait()
-                                .expect("Error: Editor returned a non-zero status");
-
-                            commit_msg = fs::read_to_string(".auto_commit_msg")
-                                .expect("Cloudn't read commit message from file");
-                            fs::remove_file(".auto_commit_msg")
-                                .expect("Failed to delete temp file");
-                            info!("Using new commit message:\n{}", commit_msg);
-                        }
-                        _ => {}
+                        info!("Using new commit message:\n{}", commit_msg);
                     }
+                    _ => {}
                 }
-                _ => {}
             }
 
             info!("Committing Message...");
