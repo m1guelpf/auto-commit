@@ -3,6 +3,8 @@ use clap_verbosity_flag::{InfoLevel, Verbosity};
 use log::{error, info};
 use question::{Answer, Question};
 use std::{
+    fs,
+    fs::File,
     io::Write,
     process::{Command, Stdio},
     str,
@@ -142,7 +144,7 @@ async fn main() -> Result<(), ()> {
         sp.unwrap().stop_with_message("Finished Analyzing!".into());
     }
 
-    let commit_msg = completion.choices[0].text.to_owned();
+    let mut commit_msg = completion.choices[0].text.to_owned();
 
     if cli.dry_run {
         info!("{}", commit_msg);
@@ -154,17 +156,59 @@ async fn main() -> Result<(), ()> {
         );
 
         if !cli.force {
-            let answer = Question::new("Do you want to continue? (Y/n)")
-                .yes_no()
+            let answer = Question::new("Do you want to continue? (Y)es / (E)dit / (N)o")
+                .accept("Yes")
+                .accept("yes")
+                .accept("Y")
+                .accept("y")
+                .accept("Edit")
+                .accept("edit")
+                .accept("E")
+                .accept("e")
+                .accept("No")
+                .accept("no")
+                .accept("N")
+                .accept("n")
+                .default(Answer::RESPONSE(String::from("yes")))
                 .until_acceptable()
-                .default(Answer::YES)
                 .ask()
                 .expect("Couldn't ask question.");
 
-            if answer == Answer::NO {
-                error!("Commit aborted by user.");
-                std::process::exit(1);
+            match answer {
+                Answer::RESPONSE(input) => {
+                    let input_lower = input.to_lowercase();
+                    match input_lower.as_str() {
+                        "no" | "n" => {
+                            error!("Commit aborted by user.");
+                            std::process::exit(1);
+                        }
+                        "edit" | "e" => {
+                            let mut commit_msg_file = File::create(".auto_commit_msg")
+                                .expect("Couldn't create temp file");
+                            commit_msg_file
+                                .write_all(commit_msg.as_bytes())
+                                .expect("Couldn't write commit msg into temp file");
+
+                            Command::new("/usr/bin/sh")
+                                .arg("-c")
+                                .arg("vim .auto_commit_msg")
+                                .spawn()
+                                .expect("Error: Failed to run editor")
+                                .wait()
+                                .expect("Error: Editor returned a non-zero status");
+
+                            commit_msg = fs::read_to_string(".auto_commit_msg")
+                                .expect("Cloudn't read commit message from file");
+                            fs::remove_file(".auto_commit_msg")
+                                .expect("Failed to delete temp file");
+                            info!("Using new commit message:\n{}", commit_msg);
+                        }
+                        _ => {}
+                    }
+                }
+                _ => {}
             }
+
             info!("Committing Message...");
         }
     }
