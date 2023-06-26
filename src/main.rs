@@ -1,15 +1,15 @@
+use async_openai::{config::OpenAIConfig, types::CreateCompletionRequestArgs};
 use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use log::{error, info};
 use question::{Answer, Question};
+use rand::seq::SliceRandom;
+use spinners::{Spinner, Spinners};
 use std::{
     io::Write,
     process::{Command, Stdio},
     str,
 };
-
-use rand::seq::SliceRandom;
-use spinners::{Spinner, Spinners};
 
 #[derive(Parser)]
 #[command(version)]
@@ -58,7 +58,7 @@ async fn main() -> Result<(), ()> {
 
     let git_staged_cmd = str::from_utf8(&git_staged_cmd).unwrap();
 
-    if git_staged_cmd.len() == 0 {
+    if git_staged_cmd.is_empty() {
         error!("There are no staged files to commit.\nTry running `git add` to stage some files.");
     }
 
@@ -74,7 +74,7 @@ async fn main() -> Result<(), ()> {
         std::process::exit(1);
     }
 
-    let client = openai_api::Client::new(&api_token);
+    let client = async_openai::Client::with_config(OpenAIConfig::new().with_api_key(api_token));
 
     let output = Command::new("git")
         .arg("diff")
@@ -87,16 +87,6 @@ async fn main() -> Result<(), ()> {
     if !cli.dry_run {
         info!("Loading Data...");
     }
-
-    let prompt_args = openai_api::api::CompletionArgs::builder()
-        .prompt(format!(
-            "git diff HEAD\\^!\n{}\n\n# Write a commit message describing the changes and the reasoning behind them\ngit commit -F- <<EOF",
-            output
-        ))
-        .engine("code-davinci-002")
-        .temperature(0.0)
-        .max_tokens(2000)
-        .stop(vec!["EOF".into()]);
 
     let sp: Option<Spinner> = if !cli.dry_run && cli.verbose.is_silent() {
         let vs = [
@@ -134,7 +124,11 @@ async fn main() -> Result<(), ()> {
     };
 
     let completion = client
-        .complete_prompt(prompt_args.build().unwrap())
+        .completions()
+        .create(CreateCompletionRequestArgs::default().prompt(format!(
+            "git diff HEAD\\^!\n{}\n\n# Write a commit message describing the changes and the reasoning behind them\ngit commit -F- <<EOF",
+            output
+        )).model("code-davinci-002").temperature(0.0).max_tokens(2000u16).stop(vec!["EOF"]).build().unwrap())
         .await
         .expect("Couldn't complete prompt.");
 
