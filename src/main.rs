@@ -1,9 +1,20 @@
-use async_openai::{config::OpenAIConfig, types::CreateCompletionRequestArgs};
+use async_openai::{
+    config::OpenAIConfig,
+    types::{
+        ChatCompletionFunctionCall, ChatCompletionFunctions, ChatCompletionRequestMessage,
+        CreateChatCompletionRequestArgs, FunctionCall, Role,
+    },
+};
 use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use log::{error, info};
 use question::{Answer, Question};
 use rand::seq::SliceRandom;
+use schemars::{
+    gen::{SchemaGenerator, SchemaSettings},
+    JsonSchema,
+};
+use serde_json::json;
 use spinners::{Spinner, Spinners};
 use std::{
     io::Write,
@@ -35,6 +46,21 @@ struct Cli {
 
     #[arg(short, long, help = "Don't ask for confirmation before committing.")]
     force: bool,
+}
+
+#[derive(Debug, serde::Deserialize, JsonSchema)]
+struct Commit {
+    /// The title of the commit.
+    title: String,
+
+    /// An exhaustive description of the changes.
+    description: String,
+}
+
+impl ToString for Commit {
+    fn to_string(&self) -> String {
+        format!("{}\n\n{}", self.title, self.description)
+    }
 }
 
 #[tokio::main]
@@ -123,12 +149,69 @@ async fn main() -> Result<(), ()> {
         None
     };
 
+    let mut generator = SchemaGenerator::new(SchemaSettings::openapi3().with(|settings| {
+        settings.inline_subschemas = true;
+    }));
+
+    let commit_schema = generator.subschema_for::<Commit>().into_object();
+
     let completion = client
-        .completions()
-        .create(CreateCompletionRequestArgs::default().prompt(format!(
-            "git diff HEAD\\^!\n{}\n\n# Write a commit message describing the changes and the reasoning behind them\ngit commit -F- <<EOF",
-            output
-        )).model("code-davinci-002").temperature(0.0).max_tokens(2000u16).stop(vec!["EOF"]).build().unwrap())
+        .chat()
+        .create(
+            CreateChatCompletionRequestArgs::default()
+                .messages(vec![
+                    ChatCompletionRequestMessage {
+                        role: Role::System,
+                        content: Some(
+                            "You are an experienced programmer who writes great commit messages."
+                                .to_string(),
+                        ),
+                        ..Default::default()
+                    },
+                    ChatCompletionRequestMessage {
+                        role: Role::Assistant,
+                        content: Some("".to_string()),
+                        function_call: Some(FunctionCall {
+                            arguments: "{}".to_string(),
+                            name: "get_diff".to_string(),
+                        }),
+                        ..Default::default()
+                    },
+                    ChatCompletionRequestMessage {
+                        role: Role::Function,
+                        content: Some(output.to_string()),
+                        name: Some("get_diff".to_string()),
+                        ..Default::default()
+                    },
+                ])
+                .functions(vec![
+                    ChatCompletionFunctions {
+                        name: "get_diff".to_string(),
+                        description: Some(
+                            "Returns the output of `git diff HEAD` as a string.".to_string(),
+                        ),
+                        parameters: Some(json!({
+                            "type": "object",
+                            "properties": {}
+                        })),
+                    },
+                    ChatCompletionFunctions {
+                        name: "commit".to_string(),
+                        description: Some(
+                            "Creates a commit with the given title and a description.".to_string(),
+                        ),
+                        parameters: Some(serde_json::to_value(commit_schema).unwrap()),
+                    },
+                ])
+                .function_call(ChatCompletionFunctionCall::Object(
+                    json!({ "name": "commit" }),
+                ))
+                .model("gpt-3.5-turbo-16k")
+                .temperature(0.0)
+                .max_tokens(2000u16)
+                .build()
+                .unwrap(),
+        )
         .await
         .expect("Couldn't complete prompt.");
 
@@ -136,7 +219,10 @@ async fn main() -> Result<(), ()> {
         sp.unwrap().stop_with_message("Finished Analyzing!".into());
     }
 
-    let commit_msg = completion.choices[0].text.to_owned();
+    let commit_data = &completion.choices[0].message.function_call;
+    let commit_msg = serde_json::from_str::<Commit>(&commit_data.as_ref().unwrap().arguments)
+        .expect("Couldn't parse model response.")
+        .to_string();
 
     if cli.dry_run {
         info!("{}", commit_msg);

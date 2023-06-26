@@ -12,8 +12,11 @@ authors = ["Miguel Piedrafita <soy@miguelpiedrafita.com>"]
 
 [dependencies]
 rand = "0.8.5"
+serde = "1.0.164"
 spinners = "4.1.0"
 question = "0.2.2"
+schemars = "0.8.12"
+serde_json = "1.0.99"
 env_logger = "0.10.0"
 clap-verbosity-flag = "2.0.0"
 log = { version = "0.4.8", features = ["std"] }
